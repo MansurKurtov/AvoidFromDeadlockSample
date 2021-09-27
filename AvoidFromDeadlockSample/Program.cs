@@ -14,9 +14,9 @@ namespace AvoidFromDeadlockSample
         static void Main(string[] args)
         {
             object obj1 = new object();
-            var task1 = new Task(() =>
+            var thread1 = new Thread(() =>
             {
-                Console.WriteLine("Task1 started");
+                Console.WriteLine("thread1 started");
 
                 //lock (obj1)
                 //{
@@ -26,36 +26,44 @@ namespace AvoidFromDeadlockSample
                 //        Console.WriteLine("Task1 finished");
                 //    }
                 //}
-                if (Monitor.TryEnter(obj1, 10))
+                if (Monitor.TryEnter(obj1, 100))
                     try
                     {
-                        Thread.Sleep(100);
-                        Console.WriteLine("Task1 finished");
+                        Thread.Sleep(1000);
+                        Console.WriteLine("thread1 succesfully finished");
                     }
                     finally
                     {
                         Monitor.Exit(obj1);
                     }
+                else
+                    Console.WriteLine("Thread1 waiting timeout!");
             });
-            var task2 = new Task(() =>
+            var thread2 = new Thread(() =>
             {
-                Console.WriteLine("Task2 started");
+                Console.WriteLine("thread2 started");
 
                 if (Monitor.TryEnter(obj1, 100))
                     try
                     {
-                        //Thread.Sleep(100);
+                        Thread.Sleep(500);
 
-                        Console.WriteLine("Task2 finished");
+                        Console.WriteLine("thread2 succesfully finished");
                     }
                     finally
                     {
                         Monitor.Exit(obj1);
                     }
+                else
+                    Console.WriteLine("Thread2 waiting timeout!");
             });
 
-            Task.WaitAll(task1, task2);
+            thread1.Start();
+            thread2.Start();
+            thread1.Join();
+            thread2.Join();
             Console.WriteLine("All tasks finished");
+            Console.ReadKey();
         }
     }
 }
